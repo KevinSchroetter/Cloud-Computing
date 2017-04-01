@@ -2,6 +2,12 @@
 <!doctype html>
 <html>
   <head>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"></meta>
+		<meta http-equiv="Content-Language" content="en"></meta>
+		<meta charset="utf-8"></meta>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+		<meta name="author" content="Philipp Bahnmueller, Kevin Schroetter"></meta>
+		<meta name="date" content="2017-04-01"></meta>
     <title>Socket.IO chat</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,10 +19,10 @@
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
     </style>
-	<script src=__dirname + '/jquery.js'></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="/jQuery/jquery.js"></script>
   </head>
   <body>
-	<script src="/socket.io/socket.io.js"></script>
 	<script>
 		$(function (){
 			var socket = io();
@@ -25,11 +31,22 @@
 				$('#m').val('');
 				return false;
 			});
+			socket.on('chat message', function(msg){
+				$('#messages').append($('<li>').text(msg));
+			});
+		});
+		$(function(){
+			$('#redirect-button').click(function(){
+				window.location.href="test";
+			});
 		});
 	</script>
+	
     <ul id="messages"></ul>
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
-  </body>
+	<button name="redirect-button" id="redirect-button">Redirect to another site</button>
+
+	  </body>
 </html>
