@@ -23,16 +23,32 @@
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       $(function () {
+    	  
+   	  	function getFormattedDate() {
+   		    var date = new Date();
+   		    var hours = date.getHours();
+   		    var minutes = date.getMinutes();
+   		   	
+   		    if(hours < 10){
+   		    	hours = '0'+hours;
+   		    }
+   		    if(minutes < 10){
+   		    	minutes = '0'+minutes;
+   		    }
+   		    var str = hours+':'+minutes;
+   		    return str;
+   		}  
+    	  
         var socket = io();
         $('form').submit(function(){
-          socket.emit('chat message', $('#m').val());
+          socket.emit('chat message', getFormattedDate()+ ' : ' +$('#m').val());
           $('#m').val('');
           return false;
         });
         socket.on('chat message', function(msg){
           $('#messages').append($('<li>').text(msg));
           window.scrollTo(0, document.body.scrollHeight);
-        });        
+        });
       });
     </script>
   </body>

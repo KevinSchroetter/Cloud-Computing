@@ -1,10 +1,15 @@
+// Server
+
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
+var connections;
+
+// Datenbank
 
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/test');
+mongoose.connect('mongodb://CCBSHSRT:CCBSHSRT1234@ds149820.mlab.com:49820/cloudcomputing');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
@@ -18,69 +23,48 @@ var accountSchema = mongoose.Schema({
 
 var Account = mongoose.model('Account', accountSchema);
 
-
-//----------------------------------------------------------------
-
-var findAccount = function(db, callback,data,socket) {
-	var cursor =db.collection('accounts').find({"username":data.username});
-   	cursor.each(function(err, doc) {
-      assert.equal(err, null);
-      if (doc !== null) {
-         console.dir(doc);
-         console.log('Account found!');
-         if(doc.password === data.password){
-        	 socket.emit('login response',{successful: "true"});
-         }
-         else{
-        	 socket.emit('login response',{successful: "false", reason: "Wrong Password!"});
-         }
-      } else {
-         callback();
-      }
-   });
-};
-
-var insertDocument = function(db, callback,data,socket){
-	var cursor =db.collection('accounts').find({"username":data.username});
-   	cursor.each(function(err, doc) {
-      assert.equal(err, null);
-      if (doc !== null) {
-         console.dir(doc);
-         console.log('Account found!');
-         socket.emit('login response',{successful: "false", reason: "Name is already forgiven!"});
-      } else {
-    	  db.collection('accounts').insertOne( {
-		      "username" : data.username,
-		      "password" : data.password
-		   }, function(err, result,socket) {
-		    assert.equal(err, null);
-		    console.log("Inserted a document into the Account collection.");
-		    socket.emit('login response',{successful: "true"});
-		    callback();
-		  });
-    	 callback();
-      }
-   });					   
-};
-
-//----------------------------------------------------------------
+// Funktionen
 
 app.get('/', function(req, res){
-  res.sendFile(__dirname + '/login.html');
+	res.sendFile(__dirname + '/login.html');
+});
+
+app.get('/index', function(req, res){
+	res.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', function(socket){
+	
   socket.on('chat message', function(msg){
     io.emit('chat message', msg);
   });
   
-  socket.on('login request', function(data){
-	 if(data.newuser === "true"){			
-	 	  var user = new Account({username: data.username,password: data.password});
-	 	  console.log(user.username);
-	 	  user.save(function (err, user) {
-	 		  if (err) return console.error(err);
-	 		});	 	  
+  socket.on('login request', function(data){	  
+	 if(data.newuser === "true"){
+		 Account.findOne({username: data.username}, function(err,account){
+			 if (err){
+				 return console.error(err);
+			 }
+			 else{
+				if(account === null){
+					 var user = new Account({username: data.username,password: data.password});
+				 	  user.save(function (err, user) {
+				 		  if (err){ 
+				 			  return console.error(err);
+				 		  }
+				 		  else{
+				 			 console.log('User '+data.username+' created a new account!');
+				 			 socket.emit('login response',{successful: "true"});
+				 		  }
+				 	});
+				 	
+				}
+				else{
+					console.log('User '+data.username+' failed to create a new account!');
+					socket.emit('login response',{successful: "false",reason: "Username already exists!"});
+				}
+			 }			
+		 });	 	 	 	  
 	 } 
 	 else{
 		 Account.findOne({username: data.username}, function(err,account){
@@ -89,12 +73,18 @@ io.on('connection', function(socket){
 			 }
 			 else{
 				 if(account !== null){
-					 console.log('login successful!');
-					 io.emit('login response','true');
+					 if(account.password === data.password){
+						 console.log('User '+data.username+' logged in!');
+						 socket.emit('login response',{successful: "true"}); 
+					 }
+					 else{
+						 console.log('User '+data.username+' entered wrong password!');
+						 socket.emit('login response',{successful: "false",reason: "Wrong password!"}); 
+					 }					 
 				 }
 				 else{
-					 console.log('login failed!');
-					 io.emit('login response','false');
+					 console.log('User '+data.username+' entered wrong name!');
+					 socket.emit('login response',{successful: "false",reason: "Wrong name!"});
 				 }
 			 }			
 		 });
