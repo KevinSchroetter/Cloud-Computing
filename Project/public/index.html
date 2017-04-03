@@ -21,27 +21,9 @@
     </style>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="/jQuery/jquery.js"></script>
+	<script src="/javaScript/index.js"></script>
   </head>
-  <body>
-	<script>
-		$(function (){
-			var socket = io();
-			$('form').submit(function(){
-				socket.emit('chat message', $('#m').val());
-				$('#m').val('');
-				return false;
-			});
-			socket.on('chat message', function(msg){
-				$('#messages').append($('<li>').text(msg));
-			});
-		});
-		$(function(){
-			$('#redirect-button').click(function(){
-				window.location.href="test";
-			});
-		});
-	</script>
-	
+  <body>	
     <ul id="messages"></ul>
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
