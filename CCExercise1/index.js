@@ -1,10 +1,15 @@
+/*
+ * @author Philipp Bahnmüller (742233), Kevin Schrötter (742082)
+ */
+
 // Server
 
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
-var connections;
+var path = require('path');
 
 // Datenbank
 
@@ -25,18 +30,45 @@ var Account = mongoose.model('Account', accountSchema);
 
 // Funktionen
 
+var sockets = {};
+
+app.use('/static',express.static(path.join(__dirname,'public')));
+
 app.get('/', function(req, res){
-	res.sendFile(__dirname + '/login.html');
+	res.sendFile(__dirname + '/public/login.html');
 });
 
 app.get('/index', function(req, res){
-	res.sendFile(__dirname + '/index.html');
+	res.sendFile(__dirname + '/public/index.html');	
 });
 
 io.on('connection', function(socket){
-	
   socket.on('chat message', function(msg){
-    io.emit('chat message', msg);
+    socket.broadcast.emit('chat message', msg);
+  });
+  
+  socket.on('disconnect',function(){
+	  io.emit('user disconnect',"User "+socket.username+" disconnected!");
+	  delete sockets[socket.username];
+  });
+  
+  socket.on('validate user',function(username){
+	  socket.username = username;
+	  sockets[username] = socket;
+	  io.emit('user connect',"User "+username+" connected!");
+  });
+  
+  socket.on('private message',function(data){
+	  if(sockets[data.to]){
+		  sockets[data.to].emit('private message',data);
+	  }
+	  else{
+		  socket.emit('error message',{msg: "User '"+data.to+"' not found!"});
+	  }
+  });
+  
+  socket.on('get usernames',function(){
+	  socket.emit('get usernames',Object.keys(sockets));
   });
   
   socket.on('login request', function(data){	  

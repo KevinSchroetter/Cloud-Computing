@@ -1,3 +1,9 @@
+<!--
+/*
+ * @author Philipp Bahnmüller (742233), Kevin Schrötter (742082)
+ */ 
+ -->
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -26,7 +32,8 @@
 			}
 			else{
 				checked = "false";
-			}			
+			}
+			sessionStorage.setItem('username',$('#username').val());
 			socket.emit('login request',{username: $('#username').val(),password: $('#password').val(),newuser: checked});
 			$('#username').val('');
 			$('#password').val('');
